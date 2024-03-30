@@ -27,7 +27,6 @@ def solve_lu(A, b):
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.linalg.splu.html
     LU = splu(A.T @ A, permc_spec='NATURAL')
     x = LU.solve(A.T @ b)
-    # U = eye(A.shape[1])
     U = LU.U
     return x, U
 
@@ -35,9 +34,9 @@ def solve_lu(A, b):
 def solve_lu_colamd(A, b):
     # TODO: return x, U s.t. Ax = b, and Permutation_rows A Permutation_cols = LU with reordered LU decomposition.
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.linalg.splu.html
-    LU_comlamd = splu(A.T @ A, permc_spec='COLAMD')
-    x = LU_comlamd.solve(A.T @ b)
-    U = LU_comlamd.U
+    LU = splu(A.T @ A, permc_spec='COLAMD')
+    x = LU.solve(A.T @ b)
+    U = LU.U
     return x, U
 
 
@@ -45,7 +44,12 @@ def solve_qr(A, b):
     # TODO: return x, R s.t. Ax = b, and |Ax - b|^2 = |Rx - d|^2 + |e|^2
     # https://github.com/theNded/PySPQR
     Q, R, E, rank = rz(A, b, permc_spec='NATURAL')
-    x = spsolve_triangular(R, Q, lower=False)
+ 
+    # reshape Q to 1D array
+    Q = Q.reshape(-1)
+
+    x = spsolve_triangular(R.tocsr(), Q, lower=False)
+   
     return x, R
 
 
@@ -53,7 +57,11 @@ def solve_qr_colamd(A, b):
     # TODO: return x, R s.t. Ax = b, and |Ax - b|^2 = |R E^T x - d|^2 + |e|^2, with reordered QR decomposition (E is the permutation matrix).
     # https://github.com/theNded/PySPQR
     Q, R, E, rank = rz(A, b, permc_spec='COLAMD')
-    x = spsolve_triangular(R, Q, lower=False)   
+    
+    # reshape Q to 1D array
+    Q = Q.reshape(-1)
+    
+    x = spsolve_triangular(R.tocsr(), Q, lower=False)   
     
     # E is the permutation matrix
     E = permutation_vector_to_matrix(E)

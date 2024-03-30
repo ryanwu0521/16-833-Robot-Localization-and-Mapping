@@ -42,27 +42,26 @@ def create_linear_system(odoms, observations, sigma_odom, sigma_observation,
 
     # TODO: First fill in the prior to anchor the 1st pose at (0, 0)
     A[0:2, 0:2] = np.eye(2)
-    b[0:2] = np.zeros((2, ))
 
     # TODO: Then fill in odometry measurements
-    # measurement function h0
-    ho = np.array([[-1, 0, 1, 0], [0, -1, 0, 1]])
+    # Jacobian function H0
+    Ho = np.array([[-1, 0, 1, 0], [0, -1, 0, 1]])
     
     # loop through odometry measurements
     for i in range(n_odom):
-        A[2 + i * 2:4 + i * 2, i * 2:i * 2 + 4] = sqrt_inv_odom @ ho
+        A[2 + i * 2:4 + i * 2, i * 2:i * 2 + 4] = sqrt_inv_odom @ Ho
         b[2 + i * 2:4 + i * 2] = sqrt_inv_odom @ odoms[i]
 
     # TODO: Then fill in landmark measurements
-    # measurement function hl
-    hl = np.array([[-1, 0, 1, 0], [0, -1, 0, 1]])
+    # Jacobian function Hl
+    Hl = np.array([[-1, 0, 1, 0], [0, -1, 0, 1]])
 
     # loop through landmark measurements
     for i in range(n_obs):
         pose_index = int(observations[i, 0])
         landmark_index = int(observations[i, 1])
-        A[2 + n_odom * 2 + i * 2:4 + n_odom * 2 + i * 2, pose_index * 2:pose_index * 2 + 2] = sqrt_inv_obs @ hl[:, 0:2]
-        A[2 + n_odom * 2 + i * 2:4 + n_odom * 2 + i * 2, n_poses * 2 + landmark_index * 2:n_poses * 2 + landmark_index * 2 + 2] = sqrt_inv_obs @ hl[:, 2:4]
+        A[2 + n_odom * 2 + i * 2:4 + n_odom * 2 + i * 2, pose_index * 2:pose_index * 2 + 2] = sqrt_inv_obs @ Hl[:, 0:2]
+        A[2 + n_odom * 2 + i * 2:4 + n_odom * 2 + i * 2, n_poses * 2 + landmark_index * 2:n_poses * 2 + landmark_index * 2 + 2] = sqrt_inv_obs @ Hl[:, 2:4]
         b[2 + n_odom * 2 + i * 2:4 + n_odom * 2 + i * 2] = sqrt_inv_obs @ observations[i, 2:4]
         
     return csr_matrix(A), b
