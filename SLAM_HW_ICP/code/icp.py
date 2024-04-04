@@ -48,7 +48,8 @@ def find_projective_correspondence(source_points,
     target_vs = np.round(target_vs).astype(int)
 
     # TODO: first filter: valid projection
-    mask = np.zeros_like(target_us).astype(bool)
+    # projection must be non-negative and within the image size (w, h) and the depth must be non-negative
+    mask = ((target_us >= 0) & (target_us < w) & (target_vs >= 0) & (target_vs < h) & (target_ds >= 0)).astype(bool)
     # End of TODO
 
     source_indices = source_indices[mask]
@@ -57,7 +58,9 @@ def find_projective_correspondence(source_points,
     T_source_points = T_source_points[mask]
 
     # TODO: second filter: apply distance threshold
-    mask = np.zeros_like(target_us).astype(bool)
+    target_points = target_vertex_map[target_vs, target_us]
+    target_dist_diff = np.linalg.norm(target_points - T_source_points, axis=1)
+    mask = (target_dist_diff < dist_diff).astype(bool)
     # End of TODO
 
     source_indices = source_indices[mask]
