@@ -85,6 +85,24 @@ def build_linear_system(source_points, target_points, target_normals, T):
     b = np.zeros((M, ))
 
     # TODO: build the linear system
+    for i in range(M):
+        n_q_i = n_q[i]
+        p_prime_i = p_prime[i]
+        q_i = q[i]
+
+        # A matrix: 1 by 6
+        A[i] = np.array([
+            -n_q_i[1] * p_prime_i[1] + n_q_i[2] * p_prime_i[2],
+            n_q_i[0] * p_prime_i[0] - n_q_i[2] * p_prime_i[2],
+            -n_q_i[0] * p_prime_i[0] + n_q_i[1] * p_prime_i[1],
+            n_q_i[0],
+            n_q_i[1],
+            n_q_i[2]
+        ])
+
+        # b matrix: scalar
+        b[i] = n_q_i @ (q_i - p_prime_i)
+
     # End of TODO
 
     return A, b
@@ -132,7 +150,16 @@ def solve(A, b):
     \return delta (6, ) vector by solving the linear system. You may directly use dense solvers from numpy.
     '''
     # TODO: write your relevant solver
-    return np.zeros((6, ))
+    # QR decomposition
+    # Q, R = np.linalg.qr(A)
+    # delta = np.linalg.solve(R, Q.T @ b)
+    # return delta
+
+    # LU decomposition
+    delta = np.linalg.solve(A.T @ A, A.T @ b)
+    return delta
+
+    # return np.zeros((6, ))
 
 
 def icp(source_points,
@@ -200,7 +227,8 @@ if __name__ == '__main__':
                         default=50)
     args = parser.parse_args()
 
-    intrinsic_struct = o3d.io.read_pinhole_camera_intrinsic('intrinsics.json')
+    # intrinsic_struct = o3d.io.read_pinhole_camera_intrinsic('intrinsics.json')
+    intrinsic_struct = o3d.io.read_pinhole_camera_intrinsic('code/intrinsics.json')
     intrinsic = np.array(intrinsic_struct.intrinsic_matrix)
 
     depth_path = os.path.join(args.path, 'depth')
@@ -247,3 +275,7 @@ if __name__ == '__main__':
     # Visualize after ICP
     o3d_utility.visualize_icp(source_points, target_vertex_map.reshape(
         (-1, 3)), T)
+
+# commandline to run the code
+# python code/icp.py dataset --source_idx 10 --target_idx 50
+# python code/icp.py dataset --source_idx 10 --target_idx 100
