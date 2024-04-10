@@ -34,7 +34,23 @@ class Map:
         \param R rotation from camera (input) to world (map), (3, 3)
         \param t translation from camera (input) to world (map), (3, )
         \return None, update map properties IN PLACE
-        '''
+        ''' 
+        # Transforms
+        points = (R @ points.T + t).T
+        normals = (R @ normals.T).T
+
+        # Weighted averages
+        w_points = self.weights[indices] * self.points[indices]
+        w_normals = self.weights[indices] * self.normals[indices] 
+        w_colors = self.weights[indices] * self.colors[indices]
+        w_combined = self.weights[indices] + 1
+
+        # Update map properties
+        self.points[indices] = (w_points + points) / w_combined
+        self.normals[indices] = (w_normals + normals) / w_combined
+        self.colors[indices] = (w_colors + colors) / w_combined
+        self.weights[indices] = w_combined
+
         pass
 
     def add(self, points, normals, colors, R, t):
@@ -48,6 +64,15 @@ class Map:
         \param t translation from camera (input) to world (map), (3, )
         \return None, update map properties by concatenation
         '''
+        # Transform
+        points = (R @ points.T + t).T
+        normals = (R @ normals.T).T
+
+        # Update map properties (concatenation)
+        self.points = np.concatenate((self.points, points), axis=0)
+        self.normals = np.concatenate((self.normals, normals), axis=0)
+        self.colors = np.concatenate((self.colors, colors), axis=0)
+        self.weights = np.concatenate((self.weights, np.ones((len(points), 1))), axis=0)
         pass
 
     def filter_pass1(self, us, vs, ds, h, w):
@@ -201,7 +226,8 @@ if __name__ == '__main__':
     parser.add_argument('--downsample_factor', type=int, default=2)
     args = parser.parse_args()
 
-    intrinsic_struct = o3d.io.read_pinhole_camera_intrinsic('intrinsics.json')
+    # intrinsic_struct = o3d.io.read_pinhole_camera_intrinsic('intrinsics.json')
+    intrinsic_struct = o3d.io.read_pinhole_camera_intrinsic('code/intrinsics.json')
     intrinsic = np.array(intrinsic_struct.intrinsic_matrix)
     indices, gt_poses = load_gt_poses(
         os.path.join(args.path, 'livingRoom2.gt.freiburg'))
@@ -241,3 +267,7 @@ if __name__ == '__main__':
                                               normals=m.normals)
     o3d.visualization.draw_geometries(
         [global_pcd.transform(o3d_utility.flip_transform)])
+    
+    # commandline to run the program
+    # python code/fusion.py dataset
+    # python code/fusion.py dataset --start_idx 1 --end_idx 200 --downsample_factor 2

@@ -122,7 +122,7 @@ def build_linear_system(source_points, target_points, target_normals, T):
     A[:, 3:6] = -n_q
 
     # b matrix: M by 1
-    b = np.sum(-n_q * (p_prime - q), axis=1)
+    b = np.sum(n_q * (p_prime - q), axis=1)
 
     return A, b
 
