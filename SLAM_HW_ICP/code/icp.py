@@ -85,25 +85,44 @@ def build_linear_system(source_points, target_points, target_normals, T):
     b = np.zeros((M, ))
 
     # TODO: build the linear system
-    for i in range(M):
-        n_q_i = n_q[i]
-        p_prime_i = p_prime[i]
-        q_i = q[i]
+    # for i in range(M):
+    #     n_q_i = n_q[i]
+    #     p_prime_i = p_prime[i]
+    #     q_i = q[i]
 
-        # A matrix: 1 by 6
-        A[i] = np.array([
-            -n_q_i[1] * p_prime_i[1] + n_q_i[2] * p_prime_i[2],
-            n_q_i[0] * p_prime_i[0] - n_q_i[2] * p_prime_i[2],
-            -n_q_i[0] * p_prime_i[0] + n_q_i[1] * p_prime_i[1],
-            n_q_i[0],
-            n_q_i[1],
-            n_q_i[2]
-        ])
+    #     # A matrix: 1 by 6
+    #     A[i] = np.array([
+    #         -n_q_i[1] * p_prime_i[1] + n_q_i[2] * p_prime_i[2],
+    #         n_q_i[0] * p_prime_i[0] - n_q_i[2] * p_prime_i[2],
+    #         -n_q_i[0] * p_prime_i[0] + n_q_i[1] * p_prime_i[1],
+    #         n_q_i[0],
+    #         n_q_i[1],
+    #         n_q_i[2]
+    #     ])
 
-        # b matrix: scalar
-        b[i] = n_q_i @ (q_i - p_prime_i)
+    #     # A[i] = np.array([
+    #     #     n_q_i[1] * p_prime_i[1] - n_q_i[2] * p_prime_i[2],
+    #     #     -n_q_i[0] * p_prime_i[0] + n_q_i[2] * p_prime_i[2],
+    #     #     n_q_i[0] * p_prime_i[0] - n_q_i[1] * p_prime_i[1],
+    #     #     n_q_i[0],
+    #     #     n_q_i[1],
+    #     #     n_q_i[2]
+    #     # ])
+
+    #     # b matrix: scalar
+    #     b[i] = n_q_i @ (p_prime_i - q_i)
 
     # End of TODO
+
+    # A matrix: M by 6
+    A = np.zeros((M, 6))
+    A[:, 0] = n_q[:, 1] * p_prime[:, 1] - n_q[:, 2] * p_prime[:, 2]
+    A[:, 1] = -n_q[:, 0] * p_prime[:, 0] + n_q[:, 2] * p_prime[:, 2]
+    A[:, 2] = n_q[:, 0] * p_prime[:, 0] - n_q[:, 1] * p_prime[:, 1]
+    A[:, 3:6] = -n_q
+
+    # b matrix: M by 1
+    b = np.sum(-n_q * (p_prime - q), axis=1)
 
     return A, b
 
