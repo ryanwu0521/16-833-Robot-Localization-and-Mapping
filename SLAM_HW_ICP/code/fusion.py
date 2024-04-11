@@ -41,13 +41,13 @@ class Map:
 
         # Weighted averages
         w_points = self.weights[indices] * self.points[indices]
-        w_normals = self.weights[indices] * self.normals[indices] 
+        w_normals = self.weights[indices] * self.normals[indices]
         w_colors = self.weights[indices] * self.colors[indices]
         w_combined = self.weights[indices] + 1
 
         # Update map properties
         self.points[indices] = (w_points + points) / w_combined
-        self.normals[indices] = (w_normals + normals) / w_combined
+        self.normals[indices] = (w_normals + normals) / w_combined / np.linalg.norm(w_normals + normals, axis=1, keepdims=True)
         self.colors[indices] = (w_colors + colors) / w_combined
         self.weights[indices] = w_combined
 
@@ -69,10 +69,10 @@ class Map:
         normals = (R @ normals.T).T
 
         # Update map properties (concatenation)
-        self.points = np.concatenate((self.points, points), axis=0)
-        self.normals = np.concatenate((self.normals, normals), axis=0)
-        self.colors = np.concatenate((self.colors, colors), axis=0)
-        self.weights = np.concatenate((self.weights, np.ones((len(points), 1))), axis=0)
+        self.points = np.concatenate((self.points, points))
+        self.normals = np.concatenate((self.normals, normals))
+        self.colors = np.concatenate((self.colors, colors))
+        self.weights = np.concatenate((self.weights, np.ones((len(points), 1))))
         pass
 
     def filter_pass1(self, us, vs, ds, h, w):
@@ -103,8 +103,15 @@ class Map:
         \param angle_diff Angle difference threshold to filter correspondences by normals
         \return mask (N, 1) in bool indicating the valid correspondences
         '''
+        # distance mask
         dist_mask = np.linalg.norm(points - input_points, axis=1) < dist_diff
-        angle_mask = np.arccos(np.clip(np.abs(np.sum(normals * input_normals, axis=1)), -1, 1)) < angle_diff
+
+        # angle mask
+        dot_product = np.sum(normals * input_normals, axis=1)
+        norms_product = np.linalg.norm(normals, axis=1) * np.linalg.norm(input_normals, axis=1)
+        angle_cos = dot_product / norms_product
+        angle_mask = np.arccos(np.clip(angle_cos, -1, 1)) < angle_diff
+
         mask = dist_mask & angle_mask
         return mask
         # return np.zeros((len(points)))

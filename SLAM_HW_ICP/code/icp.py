@@ -7,6 +7,7 @@ import os
 import numpy as np
 import open3d as o3d
 import matplotlib.pyplot as plt
+import scipy.linalg 
 
 import argparse
 import transforms
@@ -84,47 +85,40 @@ def build_linear_system(source_points, target_points, target_normals, T):
     A = np.zeros((M, 6))
     b = np.zeros((M, ))
 
-    # TODO: build the linear system
-    # for i in range(M):
-    #     n_q_i = n_q[i]
-    #     p_prime_i = p_prime[i]
-    #     q_i = q[i]
+    # # TODO: build the linear system
 
-    #     # A matrix: 1 by 6
-    #     A[i] = np.array([
-    #         -n_q_i[1] * p_prime_i[1] + n_q_i[2] * p_prime_i[2],
-    #         n_q_i[0] * p_prime_i[0] - n_q_i[2] * p_prime_i[2],
-    #         -n_q_i[0] * p_prime_i[0] + n_q_i[1] * p_prime_i[1],
-    #         n_q_i[0],
-    #         n_q_i[1],
-    #         n_q_i[2]
-    #     ])
+    # A matrix: 1 by 6
+    for i in range(M):
+        n_q_i = n_q[i]
+        q_i = q[i]
+        p_prime_i = p_prime[i]
 
-    #     # A[i] = np.array([
-    #     #     n_q_i[1] * p_prime_i[1] - n_q_i[2] * p_prime_i[2],
-    #     #     -n_q_i[0] * p_prime_i[0] + n_q_i[2] * p_prime_i[2],
-    #     #     n_q_i[0] * p_prime_i[0] - n_q_i[1] * p_prime_i[1],
-    #     #     n_q_i[0],
-    #     #     n_q_i[1],
-    #     #     n_q_i[2]
-    #     # ])
+        A[i] = np.array([-n_q_i[1] * p_prime_i[2] + n_q_i[2] * p_prime_i[1],
+                         n_q_i[0] * p_prime_i[2] - n_q_i[2] * p_prime_i[0],
+                         -n_q_i[0] * p_prime_i[1] + n_q_i[1] * p_prime_i[0],
+                         n_q_i[0],
+                         n_q_i[1],
+                         n_q_i[2]])
+    
 
-    #     # b matrix: scalar
-    #     b[i] = n_q_i @ (p_prime_i - q_i)
+        # b matrix: scalar
+        # b[i] = n_q_i @ (p_prime_i - q_i)
+        b[i] = np.dot(n_q_i, (p_prime_i - q_i))
 
+    return A, b
     # End of TODO
 
     # A matrix: M by 6
-    A = np.zeros((M, 6))
-    A[:, 0] = n_q[:, 1] * p_prime[:, 1] - n_q[:, 2] * p_prime[:, 2]
-    A[:, 1] = -n_q[:, 0] * p_prime[:, 0] + n_q[:, 2] * p_prime[:, 2]
-    A[:, 2] = n_q[:, 0] * p_prime[:, 0] - n_q[:, 1] * p_prime[:, 1]
-    A[:, 3:6] = -n_q
+    # A = np.zeros((M, 6))
+    # A[:, 0] = -n_q[:, 1] * p_prime[:, 2] + n_q[:, 2] * p_prime[:, 1]
+    # A[:, 1] = n_q[:, 0] * p_prime[:, 2] - n_q[:, 2] * p_prime[:, 0]
+    # A[:, 2] = -n_q[:, 0] * p_prime[:, 1] + n_q[:, 1] * p_prime[:, 0]
+    # A[:, 3:] = n_q
 
-    # b matrix: M by 1
-    b = np.sum(n_q * (p_prime - q), axis=1)
+    # # # b matrix: M by 1
+    # b = np.sum(n_q * (p_prime - q), axis=1)
 
-    return A, b
+    # return A, b
 
 
 def pose2transformation(delta):
@@ -171,11 +165,11 @@ def solve(A, b):
     # TODO: write your relevant solver
     # QR decomposition
     # Q, R = np.linalg.qr(A)
-    # delta = np.linalg.solve(R, Q.T @ b)
+    # delta = np.linalg.solve(R, Q.T @ (-b))
     # return delta
 
     # LU decomposition
-    delta = np.linalg.solve(A.T @ A, A.T @ b)
+    delta = np.linalg.solve(A.T @ A, A.T @ (-b))
     return delta
 
     # return np.zeros((6, ))
