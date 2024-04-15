@@ -54,7 +54,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Load intrinsics and gt poses for evaluation
-    intrinsic_struct = o3d.io.read_pinhole_camera_intrinsic('intrinsics.json')
+    intrinsic_struct = o3d.io.read_pinhole_camera_intrinsic('code/intrinsics.json')
     intrinsic = np.array(intrinsic_struct.intrinsic_matrix)
     indices, gt_poses = load_gt_poses(
         os.path.join(args.path, 'livingRoom2.gt.freiburg'))

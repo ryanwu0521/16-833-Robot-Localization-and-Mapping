@@ -50,6 +50,7 @@ def find_projective_correspondence(source_points,
     # TODO: first filter: valid projection
     # projection must be non-negative and within the image size (w, h) and the depth must be non-negative
     mask = ((target_us >= 0) & (target_us < w) & (target_vs >= 0) & (target_vs < h) & (target_ds >= 0)).astype(bool)
+    # print(np.sum(mask))
     # End of TODO
 
     source_indices = source_indices[mask]
@@ -61,6 +62,7 @@ def find_projective_correspondence(source_points,
     target_points = target_vertex_map[target_vs, target_us, :]
     target_dist_diff = np.linalg.norm(target_points - T_source_points, axis=1)
     mask = (target_dist_diff <= dist_diff).astype(bool)
+    # print(np.sum(mask))
     # End of TODO
 
     source_indices = source_indices[mask]
@@ -84,40 +86,42 @@ def build_linear_system(source_points, target_points, target_normals, T):
     A = np.zeros((M, 6))
     b = np.zeros((M, ))
 
-    # # TODO: build the linear system
+    # TODO: build the linear system
+    # A matrix: M by 6
+    A = np.zeros((M, 6))
+    A[:, 0] = -n_q[:, 1] * p_prime[:, 2] + n_q[:, 2] * p_prime[:, 1]
+    A[:, 1] = n_q[:, 0] * p_prime[:, 2] - n_q[:, 2] * p_prime[:, 0]
+    A[:, 2] = -n_q[:, 0] * p_prime[:, 1] + n_q[:, 1] * p_prime[:, 0]
+    A[:, 3:] = n_q
 
-    # A matrix: 1 by 6
-    for i in range(M):
-        n_q_i = n_q[i]
-        q_i = q[i]
-        p_prime_i = p_prime[i]
-
-        A[i] = np.array([-n_q_i[1] * p_prime_i[2] + n_q_i[2] * p_prime_i[1],
-                         n_q_i[0] * p_prime_i[2] - n_q_i[2] * p_prime_i[0],
-                         -n_q_i[0] * p_prime_i[1] + n_q_i[1] * p_prime_i[0],
-                         n_q_i[0],
-                         n_q_i[1],
-                         n_q_i[2]])
-    
-
-        # b matrix: scalar
-        # b[i] = n_q_i @ (p_prime_i - q_i)
-        b[i] = np.dot(n_q_i, (p_prime_i - q_i))
+    # b matrix: M by 1
+    b = np.sum(n_q * (p_prime - q), axis=1)
 
     return A, b
     # End of TODO
 
-    # A matrix: M by 6
-    # A = np.zeros((M, 6))
-    # A[:, 0] = -n_q[:, 1] * p_prime[:, 2] + n_q[:, 2] * p_prime[:, 1]
-    # A[:, 1] = n_q[:, 0] * p_prime[:, 2] - n_q[:, 2] * p_prime[:, 0]
-    # A[:, 2] = -n_q[:, 0] * p_prime[:, 1] + n_q[:, 1] * p_prime[:, 0]
-    # A[:, 3:] = n_q
+    # TODO: build the linear system
+    # loop implementation, which is slow
+    # A matrix: 1 by 6
+    # for i in range(M):
+    #     n_q_i = n_q[i]
+    #     q_i = q[i]
+    #     p_prime_i = p_prime[i]
 
-    # # # b matrix: M by 1
-    # b = np.sum(n_q * (p_prime - q), axis=1)
+    #     A[i] = np.array([-n_q_i[1] * p_prime_i[2] + n_q_i[2] * p_prime_i[1],
+    #                      n_q_i[0] * p_prime_i[2] - n_q_i[2] * p_prime_i[0],
+    #                      -n_q_i[0] * p_prime_i[1] + n_q_i[1] * p_prime_i[0],
+    #                      n_q_i[0],
+    #                      n_q_i[1],
+    #                      n_q_i[2]])
+    
+
+    #     # b matrix: scalar
+    #     # b[i] = n_q_i @ (p_prime_i - q_i)
+    #     b[i] = np.dot(n_q_i, (p_prime_i - q_i))
 
     # return A, b
+    # End of TODO
 
 
 def pose2transformation(delta):
